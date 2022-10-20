@@ -1,0 +1,58 @@
+
+FROM ghcr.io/bitnoize/debian:bullseye
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN set -eux; \
+    # Unprivileged user
+    groupadd -g 1000 nginx; \
+    useradd -M -d /var/lib/nginx -s /bin/bash -g 1000 -u 1000 nginx; \
+    usermod -a -G tty,staff nginx; \
+    mkdir -p -m 0750 /var/lib/nginx; \
+    chown nginx:nginx /var/lib/nginx
+
+COPY docker-entrypoint.sh /sbin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
+
+RUN set -eux; \
+    # Nginx APT
+    wget -q -O- "https://nginx.org/keys/nginx_signing.key" | \
+        gpg --dearmor > /usr/share/keyrings/nginx.gpg; \
+    { \
+        echo "Package: *"; \
+        echo "Pin: origin nginx.org"; \
+        echo "Pin-Priority: 1000"; \
+    } | tee /etc/apt/preferences.d/20nginx; \
+    { \
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/debian bullseye nginx"; \
+    } | tee /etc/apt/sources.list.d/nginx.list; \
+    # Debian packages
+    apt-get update -q; \
+    apt-get install -yq \
+        nginx certbot logrotate; \
+    # Clean-up
+    rm -rf \
+        /etc/nginx/* \
+        /etc/letsencrypt/* \
+        /var/www/* \
+        /var/log/nginx/* \
+#       /var/log/letsencrypt/* \
+        /usr/share/doc/* \
+        /usr/share/info/* \
+        /usr/share/man/* \
+        /var/lib/apt/lists/*; \
+    # Configuration
+    mkdir -p -m 0750 \
+        /var/lib/letsencrypt \
+        /var/log/letsencrypt; \
+    { \
+        echo "max-log-backups = 0"; \
+    } | tee /etc/letsencrypt/cli.ini; \
+    chown -R nginx:nginx \
+        /etc/letsencrypt \
+        /var/lib/letsencrypt \
+        /var/log/nginx \
+        /var/log/letsencrypt
+
+CMD ["nginx", "-g", "daemon off;"]
+
