@@ -18,7 +18,7 @@ if [ "$(id -u)" = "0" ]; then
     /run/nginx \
     /var/lib/nginx \
     /var/lib/letsencrypt \
-    /var/log/nginx
+    /var/log/nginx \
     /var/log/letsencrypt
 
   exec gosu nginx "$@"
