@@ -13,7 +13,7 @@ if [ "$(id -u)" = "0" ]; then
     groupmod -g "$GID" nginx
   fi
 
-  chown -R nginx:nginx \
+  chown nginx:nginx \
     /etc/letsencrypt \
     /run/nginx \
     /var/lib/nginx \
