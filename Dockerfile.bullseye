@@ -19,30 +19,21 @@ ENTRYPOINT ["entrypoint.sh"]
 RUN set -eux; \
     # Nginx APT
     wget -q -O- "https://nginx.org/keys/nginx_signing.key" | \
-        gpg --dearmor > /usr/share/keyrings/nginx.gpg; \
+        gpg --dearmor > /usr/share/keyrings/nginx-archive-keyring.gpg; \
     { \
         echo "Package: *"; \
         echo "Pin: origin nginx.org"; \
         echo "Pin-Priority: 1000"; \
     } | tee /etc/apt/preferences.d/20nginx; \
     { \
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/debian bullseye nginx"; \
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/debian bullseye nginx"; \
     } | tee /etc/apt/sources.list.d/nginx.list; \
     # Debian packages
     apt-get update -q; \
     apt-get install -yq \
-        nginx certbot logrotate; \
-    # Clean-up
-    rm -rf \
-        /etc/nginx/* \
-        /etc/letsencrypt/* \
-        /var/www/* \
-        /var/log/nginx/* \
-#       /var/log/letsencrypt/* \
-        /usr/share/doc/* \
-        /usr/share/info/* \
-        /usr/share/man/* \
-        /var/lib/apt/lists/*; \
+        nginx \
+        certbot \
+        logrotate; \
     # Configuration
     mkdir -p -m 0750 \
         /var/lib/letsencrypt \
@@ -54,7 +45,20 @@ RUN set -eux; \
         /etc/letsencrypt \
         /var/lib/letsencrypt \
         /var/log/nginx \
-        /var/log/letsencrypt
+        /var/log/letsencrypt; \
+    # Clean-up
+    rm -rf \
+        /etc/nginx/* \
+        /etc/letsencrypt/* \
+        /var/www/* \
+        /var/log/nginx/* \
+#       /var/log/letsencrypt/* \
+        /usr/share/doc/* \
+        /usr/share/info/* \
+        /usr/share/man/* \
+        /var/lib/apt/lists/*; \
+    # Smoke tests
+    nginx -V
 
 CMD ["nginx", "-g", "daemon off;"]
 

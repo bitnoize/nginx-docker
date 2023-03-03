@@ -21,6 +21,10 @@ if [ "$(id -u)" = "0" ]; then
     /var/log/nginx \
     /var/log/letsencrypt
 
+  if [ -d "/lib/entrypoint" ]; then
+    run-parts -v --regex '.*sh$' /lib/entrypoint
+  fi
+
   exec gosu nginx "$@"
 else
   exec "$@"
